@@ -6,76 +6,141 @@
     <title>IPTV Player</title>
     <link href="https://vjs.zencdn.net/8.0.4/video-js.css" rel="stylesheet">
     <style>
+        /* General Body Styles */
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
+            background-color: #121212; /* Dark background */
+            color: #ffffff; /* Light text */
         }
-        #controls {
-            margin-bottom: 20px;
+
+        /* Player Styles */
+        #playerContainer {
+            position: sticky;
+            top: 0;
+			width:30%
+            background-color: #1e1e1e; /* Slightly lighter than body */
+            z-index: 1000;
+			display:flex;
+			justify-content:center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 30);
         }
+
+        #player {
+            width:500px;
+			aspect-ratio: 16 / 9;
+			
+            height: 400px;
+        }
+
+        @media (max-width: 768px) { /* For smaller devices */
+            #player {
+                height: 200px;
+            }
+        }
+
+        /* File Input Styles */
+        #fileInput {
+            margin: 10px;
+            padding: 5px;
+            border: none;
+            background-color: #333333;
+            color: #ffffff;
+            border-radius: 5px;
+            display: block;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #fileInput:hover {
+            background-color: #444444;
+        }
+
+        /* Playlist Styles */
         #playlist {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+            margin: 20px;
         }
+
         .channel {
             cursor: pointer;
             padding: 10px;
-            border: 1px solid #ccc;
+            border: 1px solid #444444; /* Darker border */
             border-radius: 5px;
             text-align: center;
             width: 150px;
-            background-color: #f9f9f9;
-            transition: background-color 0.2s;
+            background-color: #1e1e1e; /* Match player container */
+            transition: background-color 0.2s, transform 0.2s;
         }
+
         .channel:hover {
-            background-color: #e0e0e0;
+            background-color: #333333; /* Lighter on hover */
+            transform: scale(1.05); /* Slight zoom effect */
         }
+
         .channel img {
             max-width: 100%;
             height: 80px;
             object-fit: contain;
             margin-bottom: 10px;
+            border-radius: 3px;
+        }
+
+        .channel p {
+            font-size: 14px;
+            margin: 0;
+            color: #ffffff;
+        }
+
+        /* Scrollbar Styles */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #444444; /* Dark scrollbar */
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #555555; /* Slightly lighter on hover */
+        }
+
+        ::-webkit-scrollbar-track {
+            background-color: #222222; /* Track color */
         }
     </style>
 </head>
 <body>
-    <h1>IPTV Player</h1>
-    <div id="controls">
-        <input type="text" id="m3uUrl" placeholder="Enter M3U file URL" style="width: 300px;" />
-        <button id="loadPlaylist">Load Playlist</button>
+    <div id="playerContainer">
+        <video id="player" class="video-js vjs-default-skin" controls preload="auto">
+            <p class="vjs-no-js">Your browser does not support HLS playback. Please use a modern browser.</p>
+        </video>
     </div>
-    <video id="player" class="video-js vjs-default-skin" controls preload="auto" width="640" height="360">
-        <p class="vjs-no-js">Your browser does not support HLS playback. Please use a modern browser.</p>
-    </video>
+
+    <input type="file" id="fileInput" accept=".m3u" />
     <div id="playlist"></div>
 
     <script src="https://vjs.zencdn.net/8.0.4/video.min.js"></script>
     <script>
+        const fileInput = document.getElementById('fileInput');
         const playlist = document.getElementById('playlist');
         const player = videojs('player');
-        const loadPlaylistButton = document.getElementById('loadPlaylist');
-        const m3uUrlInput = document.getElementById('m3uUrl');
 
-        // Fetch M3U file from URL
-        loadPlaylistButton.addEventListener('click', () => {
-            const url = m3uUrlInput.value.trim();
-            if (!url) {
-                alert('Please enter a valid M3U file URL.');
-                return;
+        // Handle file input
+        fileInput.addEventListener('change', function () {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const content = e.target.result;
+                    parseM3U(content);
+                };
+                reader.readAsText(file);
             }
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch the M3U file. Please check the URL.');
-                    }
-                    return response.text();
-                })
-                .then(content => parseM3U(content))
-                .catch(error => {
-                    console.error(error);
-                    alert('Error loading the playlist. Check the console for details.');
-                });
         });
 
         // Parse M3U content
